@@ -116,7 +116,6 @@ def game():
     FPS = 60
     exit = False
 
-    font = pygame.font.SysFont(None,15)
     car_image = pygame.image.load('assets/green-car.png')
     # resizing the car image
     new_car_size = (round(car_image.get_width() * 0.7),round(car_image.get_height() * 0.7))
