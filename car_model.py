@@ -1,5 +1,3 @@
-from pprint import pp
-from turtle import Screen
 import pygame
 from pygame.math import Vector2
 import numpy as np
