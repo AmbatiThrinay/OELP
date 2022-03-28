@@ -11,6 +11,6 @@ simulations are to be performed in python.
 
 `requirements.txt` can be used to create a pip virtual environment
 
-  python3 -m venv env
-	source env/bin/activate
-	pip install -r requirements.txt
+  >`python3 -m venv env`
+  >`source env/bin/activate`
+  >`pip install -r requirements.txt`
