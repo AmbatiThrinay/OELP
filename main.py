@@ -19,10 +19,11 @@ import os
 #         self.angle = 0.0
 
 path1 = Path()
+path1.intial_velocity = 10
 env = Env(path1)
 
 # <-- Hyper Parameters -->
-Total_esipodes = 100_000
+Total_esipodes = 30_000
 X_samples,Y_Samples = 30,20
 XTE_samples = 3
 Learning_rate = 0.3
@@ -33,7 +34,7 @@ epsilon = 1
 epsilon_decay_rate = Exploration_rate/(1-Total_esipodes//2)
 
 record_every = 5_000 # multiple of these episodes are saved
-render_every = 10_000 # multiple of these episode will be render
+render_every = 100 # multiple of these episode will be render
 # 0 : 'pedal_gas'
 # 1 : 'pedal_reverse'
 # 2 : 'pedal_none'
@@ -77,8 +78,8 @@ def get_discrete(cords):
 q_table = np.random.uniform(low=-10,high=-1,size=(X_samples,Y_Samples,XTE_samples,len(actions)))
 print(f"Size of the Q table{q_table.shape}")
 
-os.mkdir('curved') # name of the dir where the files are stored
-os.mkdir('curved/Q_tables') # for storing the Q_tables
+# os.mkdir('curved') # name of the dir where the files are stored
+# os.mkdir('curved/Q_tables') # for storing the Q_tables
 
 episodes_rewards = [] # total reward for each episode
 # stats for every record_every episode
@@ -96,7 +97,7 @@ for episode in tqdm(range(Total_esipodes+1)):
     
     record = False
     if episode!=0 and episode%(record_every)== 0 :
-        record = True
+        record = False
 
     start_time = time.time()
     # reset the envirnoment
@@ -131,13 +132,17 @@ for episode in tqdm(range(Total_esipodes+1)):
         dis_state = new_dis_state
 
         if render :
-            env.render_env(FPS_lock=None)
-            env.record_env(f'curved/E{episode}')
+            env.render_env(FPS_lock=None,render_stats=True)
+            # env.record_env(f'curved/E{episode}')
 
-        # stopping the envirnoment it eposide exceeds 3 mins
-        if (time.time() - start_time)/60 > 3 :
+        # stopping the envirnoment if car takes more than 3 consecutive turns
+        if abs(env.car.angle) > 360*3 :
             env.done = True
-            print(f"Episode {episode} was stopped.")
+            print(f"Car is moving in circles, Episode {episode} was stopped.")
+        # stopping the environment if episode time exceeds 2.5 mins
+        if (time.time() - start_time)/60 > 2.5 :
+            env.done = True
+            print(f"Episode time exceeded, Episode {episode} was stopped.")
         
         env.close_quit()
     
@@ -170,17 +175,41 @@ plt.xlabel("Episodes")
 plt.ylabel("Net reward")
 plt.plot(np.arange(Total_esipodes+1),np.array(episodes_rewards))
 plt.grid()
-plt.savefig('curved/metrics.png')
 plt.show()
-
+plt.savefig('curved/metrics.png')
 print("<< Done >>")
 
-# def play_episode(filname):
-#     X_samples,Y_Samples = 35,25
-#     XTE_samples = 3
-#     Learning_rate = 0.3
-#     Discount = 0.85
-#     Exploration_rate = 0.01
-#     epsilon = 0.01
+
+def play_episode(filename,fps=60):
+    '''
+    Input : Relative path of file with '.npy' extension 
+    FPS to render the envirnoment,default is 60 FPS
+    '''
+    q_table = np.load(filename)
+    print(f"Size of the Q table{q_table.shape}")
+
+    path1 = Path()
+    env = Env(path1)
+    # reset the envirnoment
+    dis_state = get_discrete(env.reset())
+    while not env.done :
+        
+        #choose best action from Q(s,a) values
+        action = np.argmax(q_table[dis_state])  
+
+        cords,reward,_ = env.step(actions[action])
+        episode_reward += reward
+        dis_state = get_discrete(cords)
+
+        env.render_env(FPS_lock=fps,render_stats=True)
+        env.close_quit()
+    
+    episodes_rewards.append(episode_reward)
+    print(f"Episode total reward : {episodes_rewards}")
+
+
+
+
+
 
     

@@ -1,5 +1,7 @@
+from pprint import pp
 import pygame
 from pygame.math import Vector2
+import pygame.gfxdraw as gfxdraw
 import numpy as np
 
 # for supressing the hello message from pygame
@@ -25,9 +27,9 @@ class Car:
         
         self.max_velocity = 22.22 # 80 kmph speed
         self.brake_deacceleration = 4.6 # 4.6 m/s^2
-        self.free_deacceleration = 6.86 # stimulate friction u*g = 0.7*9.8
-        self.steering_speed = 15 # 15 deg/s
-        self.acceleration_speed = 1
+        self.free_deacceleration = 3.86 # stimulate friction u*g = 0.7*9.8
+        self.steering_speed = 13 # 15 deg/s
+        self.acceleration_speed = 10 # 1 m/s^2 per sec
 
         self.acceleration = 0.0
         self.steering = 0.0
@@ -66,13 +68,13 @@ class Car:
             if self.velocity < 0 :
                 self.acceleration = self.brake_deacceleration
             else :
-                self.acceleration += self.acceleration_speed
+                self.acceleration += self.acceleration_speed * dt
 
         elif action == 'pedal_reverse' :
             if self.velocity > 0 :
                 self.acceleration = -self.brake_deacceleration
             else :
-                self.acceleration -= self.acceleration_speed
+                self.acceleration -= self.acceleration_speed * dt
         elif action == 'pedal_brake' :
             if abs(self.velocity) > dt*self.brake_deacceleration :
                 # abs(brake_deacceleration) * sign(velocity)
@@ -104,12 +106,11 @@ class Car:
 
 
 
-
 def game():
 
     pygame.init()
     pygame.display.set_caption("car testing")
-    ppu = 2 # pixels per unit = (76*0.7) pixels/ 3 meters(length)
+    ppu = 2
     width,height = (600,300) # 600m X 300 m meters
     screen = pygame.display.set_mode((width*ppu, height*ppu))
     clock = pygame.time.Clock()
@@ -123,7 +124,8 @@ def game():
     car = Car(10, 30)
 
     while not exit:
-        dt = clock.get_time() / 1000 # return time in milliseconds betwwen two ticks
+        # dt = clock.get_time() / 1000 # return time in milliseconds betwwen two ticks
+        dt = 1/60
 
         # Event queue
         for event in pygame.event.get():
@@ -151,7 +153,7 @@ def game():
 
         # text
         font = pygame.font.SysFont('assets/ComicNeue-Regular.ttf',18)
-        text_surface1 = font.render(f"(x,y) : ({car.position.x:.3f},{car.position.x:.3f})",True,(0,255,0))
+        text_surface1 = font.render(f"(x,y) : ({car.position.x:.3f},{car.position.y:.3f})",True,(0,255,0))
         text_surface2 = font.render(f"steering : {car.steering:.3f}",True,(0,255,0))
         text_surface3 = font.render(f"velocity : {car.velocity:.3f}",True,(0,255,0))
 
@@ -163,6 +165,28 @@ def game():
         screen.blit(text_surface1,(10,10))
         screen.blit(text_surface2,(10,25))
         screen.blit(text_surface3,(10,37))
+
+        #----------
+        # delete
+        # x,y = car.position
+        # scale = 9
+        # x,y = x*ppu,y*ppu
+        # h = car.length*ppu*scale
+        # w = 1.1*ppu*scale
+        # car_surf = pygame.surface()
+        # gfxdraw.filled_polygon(screen,[(x-h/2,y-w),(x+h/2,y-w),(x+h/2,y+w),(x-h/2,y+w)],(255,255,255))
+        # pygame.gfxdraw.bezier(screen,[])
+
+
+        # car_imag = pygame.image.load('assets/car.svg')
+        # # resizing the car image
+        # new_car_size = (round(car_imag.get_width() * 0.3),round(car_imag.get_height() * 0.3))
+        # car_imag = pygame.transform.scale(car_imag,new_car_size)
+        # rotated = pygame.transform.rotate(car_imag,car.angle-90)
+        # rect = rotated.get_rect()
+        # screen.blit(rotated, car.position * ppu - (rect.width / 2, rect.height / 2))
+        #----------
+
         pygame.display.flip()
 
         clock.tick(FPS)
