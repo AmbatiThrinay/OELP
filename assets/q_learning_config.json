@@ -1,0 +1,13 @@
+{
+    "initial_velocity": 5.0,
+    "total_episodes": 40000,
+    "x_samples": 100,
+    "y_samples": 60,
+    "XTE_samples": 3,
+    "learning_rate": 0.2,
+    "discount": 0.9,
+    "exploration_rate": 0.1,
+    "epsilon_decay_till": 10000,
+    "save_every": 2000,
+    "render_record_every": 2000
+}

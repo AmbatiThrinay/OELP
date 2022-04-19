@@ -1,4 +1,3 @@
-from pprint import pp
 import pygame
 from pygame.math import Vector2
 import pygame.gfxdraw as gfxdraw
@@ -26,8 +25,8 @@ class Car:
         self.max_steering = max_steering
         
         self.max_velocity = 22.22 # 80 kmph speed
-        self.brake_deacceleration = 4.6 # 4.6 m/s^2
-        self.free_deacceleration = 3.86 # stimulate friction u*g = 0.7*9.8
+        self.brake_deacceleration = 3.6 # 4.6 m/s^2
+        self.friction = 2.86 # stimulate friction u*g = 0.7*9.8
         self.steering_speed = 13 # 15 deg/s
         self.acceleration_speed = 10 # 1 m/s^2 per sec
 
@@ -44,7 +43,7 @@ class Car:
         self.position.y += self.velocity * np.sin(np.deg2rad(-self.angle)) * dt
         self.velocity += self.acceleration * dt
         # limiting the velocity
-        self.velocity = np.clip(self.velocity,-self.max_velocity,self.max_velocity)
+        self.velocity = np.clip(self.velocity,-self.max_velocity+10,self.max_velocity)
         
         if self.steering:
             turning_radius = self.length / np.sin(np.radians(self.steering))
@@ -65,16 +64,16 @@ class Car:
                     steer_none,
         '''
         if action == 'pedal_gas' :
-            if self.velocity < 0 :
-                self.acceleration = self.brake_deacceleration
-            else :
-                self.acceleration += self.acceleration_speed * dt
+            # if self.velocity < 0 :
+            #     self.acceleration = self.brake_deacceleration
+            # else :
+            self.acceleration += self.acceleration_speed * dt
 
         elif action == 'pedal_reverse' :
-            if self.velocity > 0 :
-                self.acceleration = -self.brake_deacceleration
-            else :
-                self.acceleration -= self.acceleration_speed * dt
+            # if self.velocity > 0 :
+            #     self.acceleration = -self.brake_deacceleration
+            # else :
+            self.acceleration -= (self.acceleration_speed-0.6) * dt
         elif action == 'pedal_brake' :
             if abs(self.velocity) > dt*self.brake_deacceleration :
                 # abs(brake_deacceleration) * sign(velocity)
@@ -82,8 +81,8 @@ class Car:
             else :
                 self.acceleration = -self.velocity/dt #small acceleration to make velocity zero
         elif action == 'pedal_none' :
-            if abs(self.velocity) > dt*self.free_deacceleration :
-                self.acceleration = -np.copysign(self.free_deacceleration,self.velocity)
+            if abs(self.velocity) > dt*self.friction :
+                self.acceleration = -np.copysign(self.friction,self.velocity)
             else :
                 if dt != 0 :
                     self.acceleration = -self.velocity/dt
@@ -99,7 +98,7 @@ class Car:
             print("No action is given")
 
         # limiting the acceleration
-        self.acceleration = np.clip(self.acceleration,-self.max_acceleration,self.max_acceleration)
+        self.acceleration = np.clip(self.acceleration,-self.max_acceleration+0.6,self.max_acceleration)
 
         # limiting the steering angle
         self.steering = np.clip(self.steering,-self.max_steering,self.max_steering)
@@ -111,8 +110,8 @@ def game():
     pygame.init()
     pygame.display.set_caption("car testing")
     ppu = 2
-    width,height = (600,300) # 600m X 300 m meters
-    screen = pygame.display.set_mode((width*ppu, height*ppu))
+    width,height = (1000,700) # 500m X 350m meters
+    screen = pygame.display.set_mode((width, height))
     clock = pygame.time.Clock()
     FPS = 60
     exit = False
@@ -195,7 +194,7 @@ def game():
 
 if __name__ == '__main__':
     print("-- For testing the car properties --")
-    print(" Redering at 60 FPS ")
+    print(" Rendering at 60 FPS ")
     print("<< Controls >>")
     print("<< up arrow >>    - gas pedal ")
     print("<< down arrow >>  - reverse ")
