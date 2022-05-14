@@ -54,6 +54,7 @@ class Env(Path):
         self._dt = 1/60
         self._record = False
         self._recorder = None
+        self.previous_index = 0
 
         return self.car.position.x,self.car.position.y,0.0
     
@@ -149,46 +150,64 @@ class Env(Path):
         if FPS_lock : self._clock.tick(FPS_lock)
         else : self._clock.tick()
     
-    def __reward(self,xte):
-        if 0 <= xte <= self.path.path_width/4 :
-            return -1
-        elif self.path.path_width/4 < xte < self.path.path_width/2 :
-            return -5
+    def __xte_reward(self):
+        present_car_cord = np.array([[self.car.position.x,self.car.position.y]])
+        
+        frame_reward,xte_reward,progress_reward = -0.5,0,0
+
+        # xte reward
+        if 0 <= self.xte <= self.path.path_width/4 :
+            xte_reward = 0
+        elif self.path.path_width/4 < self.xte < self.path.path_width/2 :
+            xte_reward = -3
         else :
-            # self.done = True
-            return -1000
+            xte_reward = -10
+        
+        # progress reward for moving every 5 points 
+        present_index = np.argmin(spatial.distance.cdist(self.path_arr,present_car_cord))
+        if present_index > self.previous_index and not(present_index%4) :
+            progress_reward = 25
+        self.previous_index = present_index
+        return frame_reward +progress_reward +xte_reward
+
 
     def step(self,action):
         '''
         returns [x_pos,y_pos,xte],reward,done
         '''
+        # car position before update
+        previous_car_pos = self.car.position
+
         self.car.update(action,self._dt)
-        car_cord = np.array([[self.car.position.x,self.car.position.y]])
-        end_dist = np.min(spatial.distance.cdist(self.end_arr,car_cord)) # distance from end
+        present_car_cord = np.array([[self.car.position.x,self.car.position.y]])
+
+        # Stop the agent from going out of the screen
         map_size = (self.path.screen_size[0]/self.ppu,self.path.screen_size[1]/self.ppu)
         if not(0<self.car.position.x<map_size[0]) or not(0<self.car.position.y<map_size[1]) :
             self.done = True
-            return (self.car.position.x,self.car.position.y,max(map_size[0],map_size[1])),-1000,self.done
-        xte = 0.0 # track cross error
+            self.reward = -1000
+            return (self.car.position.x,self.car.position.y,max(map_size[0],map_size[1])),self.reward,self.done
+
         # if perpendicular distance is less than path width/10
         # car has reached the end and got a reward of 100
+        end_dist = np.min(spatial.distance.cdist(self.end_arr,present_car_cord)) # distance from end
         if end_dist < self.path.path_width/10 :
             self.done = True
-            self.reward = 100
+            self.reward = 1000
             self.goal_reached = True
-            return (self.car.position.x,self.car.position.y,xte),self.reward,self.done
+            return (self.car.position.x,self.car.position.y,0),self.reward,self.done
 
         if not self.done :
-            self.xte = np.min(spatial.distance.cdist(self.path_arr,car_cord))
-            self.reward = self.__reward(self.xte)
-            return (self.car.position.x,self.car.position.y,xte),self.reward,self.done
+            self.xte = np.min(spatial.distance.cdist(self.path_arr,present_car_cord))
+            self.reward = self.__xte_reward()
+            return (self.car.position.x,self.car.position.y,self.xte),self.reward,self.done
         
     def close_quit(self,):
         '''
-        To avoid crash press the exit button
+        To avoid crash press the exit button or press 'q'
         '''
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+            if event.type == pygame.QUIT or (event.type == pygame.KEYUP and event.key == pygame.K_q):
                 if self._record == True :
                     self._recorder.release()
                 pygame.display.quit()
@@ -244,10 +263,9 @@ def main():
     import random
     print("<< Random Agent >>")
     path1 = Path()
-    path1.load_from_json('straight_zoom')
+    path1.load_from_json('small0')
     path1.initial_velocity = 5.0
     env = Env(path1)
-    done = False
     env.reset()
     actions = {
         1 : 'pedal_gas',
@@ -258,10 +276,14 @@ def main():
         6 : 'steer_left',
         7 : 'steer_none'
     }
-    while not done :
-        action = random.choice([1,4,5,6])
+    rewards = []
+    ep_reward = 0
+    while not env.done :
+        action = random.choice([1,5,6])
         cords,reward,done = env.step(actions[action])
-
+        ep_reward += reward
+        rewards.append(ep_reward)
+        # print(ep_reward,end='|')
         env.render_env(render_stats=True)
 
         # Example to fix the update rate and rendering rate to 30 FPS,show car stats
@@ -275,6 +297,13 @@ def main():
 
         env.close_quit()
 
+    import matplotlib.pyplot as plt
+    plt.style.use(['grid','science','no-latex'])
+    plt.figure()
+    plt.xlabel('steps')
+    plt.ylabel('net reward')
+    plt.plot(list(range(len(rewards))),rewards)
+    plt.show()
 
 if __name__ == '__main__' :
     main()

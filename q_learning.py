@@ -1,47 +1,43 @@
 # Author : Ambati Thrinay Kumar Reddy
-#  Deep Q Neural network Training and Testing
+#  Q learning Training and Testing
 
 from env import Env,Path
-from dqn import DQN
+import random
 import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from time import time, gmtime, strftime
-import os, json, pickle
+import os, json
 
 # opening the json file
 try :
-    with open('assets\dqn_config.json','r') as config:
-        dqn_config = json.load(config)
+    with open('assets\q_learning_config.json','r') as config:
+        q_learning_config = json.load(config)
 except FileNotFoundError :
-    print("DQN config Json file is missing from assets folder.")
+    print("Q-learning config Json file is missing from assets folder.")
 
 path1 = Path()
 path_name = Path.get_path_names_from_json()[3]
 path1.load_from_json(path_name)
 path1.initial_velocity = 5.0
-print(dqn_config)
-path1.initial_velocity = dqn_config["initial_velocity"] #initial velocity of car
+print(q_learning_config)
+path1.initial_velocity = q_learning_config["initial_velocity"] #initial velocity of car
 env = Env(path1)
 
 # <-- Hyper Parameters -->
-Total_episodes = dqn_config["total_episodes"]
-X_samples = dqn_config["x_samples"]
-Y_samples = dqn_config["y_samples"]
-XTE_samples = dqn_config["XTE_samples"]
-nn_learning_rate = dqn_config["nn_learning_rate"]
-Discount = dqn_config["discount"]
-Exploration_rate = dqn_config["exploration_rate"]
-batch_size = dqn_config["batch_size"]
-memory_size = dqn_config["memory_size"]
-target_update_rate = dqn_config["target_network_update_rate"]
-seed = dqn_config["seed"]
+Total_episodes = q_learning_config["total_episodes"]
+X_samples = q_learning_config["x_samples"]
+Y_samples = q_learning_config["y_samples"]
+XTE_samples = q_learning_config["XTE_samples"]
+Learning_rate = q_learning_config["learning_rate"]
+Discount = q_learning_config["discount"]
+Exploration_rate = q_learning_config["exploration_rate"]
 epsilon = 1
 # decays from episode 1 to total_episodes/2
-epsilon_decay_rate = (1-Exploration_rate)/(dqn_config["epsilon_decay_till"])
+epsilon_decay_rate = (1-Exploration_rate)/(q_learning_config["epsilon_decay_till"])
 
-save_every = dqn_config["save_every"] # multiple of these episodes are saved
-render_record_every = dqn_config["render_record_every"] # multiple of these episode will be render
+save_every = q_learning_config["save_every"] # multiple of these episodes are saved
+render_record_every = q_learning_config["render_record_every"] # multiple of these episode will be render
 # 0 : 'pedal_gas',
 # 1 : 'pedal_brake',
 # 2 : 'pedal_none',
@@ -56,12 +52,6 @@ actions = {
     3 : 'steer_left',
     4 : 'steer_none',
 }
-
-# DQN agent
-agent = DQN(
-    3, len(actions), nn_learning_rate, Discount, batch_size, seed,
-    epsilon=1,target_update_rate=target_update_rate, eps_end=Exploration_rate,
-    eps_dec=epsilon_decay_rate)
 
 # <-- Environment Discretization -->
 x_max,y_max,xte_max = path1.screen_size[0]/env.ppu,path1.screen_size[1]/env.ppu,path1.path_width/2
@@ -80,14 +70,18 @@ def get_discrete(cords):
     else :
         return int(x_state),int(y_state),2
 
+# q_table = np.load('curved_1\Q_tables\E12000.npy')
+q_table = np.random.uniform(low=-10,high=-1,size=(X_samples,Y_samples,XTE_samples,len(actions)))
+print(f"Size of the Q table{q_table.shape}")
+
 # using GMT time to create a unique folder for saving
 unique_string = strftime("_%d-%b-%Y-%H-%M-%S", gmtime())
 new_folder_name = path_name+unique_string
 os.mkdir(new_folder_name) # name of the dir where the files are stored
-os.mkdir(new_folder_name+'/DQN_checkpoints') # for storing the Q_tables
+os.mkdir(new_folder_name+'/Q_tables') # for storing the Q_tables
 # writing the Q-learning config used
-with open(f'{new_folder_name}\dqn_config_used.json','w') as config:
-    json.dump(dqn_config,config)
+with open(f'{new_folder_name}\q_learning_config_used.json','w') as config:
+    json.dump(q_learning_config,config)
 
 
 episodes_rewards = [] # total reward for each episode
@@ -114,19 +108,26 @@ for episode in tqdm(range(Total_episodes+1)):
     episode_reward = 0
     while not env.done :
         
-        # Agent shows action
-        action = agent.choose_action(dis_state)
+        ## 1-epsilon greedy action
+        if random.random() < epsilon :
+            random_int = random.randint(0,len(actions)-1) #choose random action
+            if random_int <= 0 : action = 0 
+            else : action = random_int
+        else :
+            #choose best action from Q(s,a) values
+            action = np.argmax(q_table[dis_state])
 
-        # step the environment
         cords,reward,done = env.step(actions[action])
         episode_reward += reward
 
-        # convert the observation in discrete state
         new_dis_state = get_discrete(cords)
-
-        # store the experience and train the agent
-        agent.store_transition(dis_state, action, reward, new_dis_state, done)
-        agent.learn()
+        if not done :
+            max_future_q = np.max(q_table[new_dis_state])
+            current_q = q_table[dis_state][action]
+            new_q = (1-Learning_rate)*current_q + Learning_rate * (reward + Discount * max_future_q)
+            q_table[dis_state][action] = new_q
+        elif env.goal_reached :
+            q_table[dis_state][action] = reward
         dis_state = new_dis_state
 
         if render :
@@ -142,7 +143,7 @@ for episode in tqdm(range(Total_episodes+1)):
         elif abs(env.car.angle) > 360*2 :
             env.done = True
             print(f"Car is moving in circles, Episode {episode} was stopped.")
-            print(agent.Q_network_local.forward(dis_state))
+            print(q_table[dis_state])
             
         
         # stopping the environment if episode time exceeds 2.5 mins
@@ -154,19 +155,21 @@ for episode in tqdm(range(Total_episodes+1)):
     
     # saving the Q table
     if save :
-        agent.save(f"{new_folder_name}/DQN_checkpoints/E{episode}")
-
-    # updating the stats considering last 100 episodes
-    if episode%100 :
+        np.save(f"{new_folder_name}/Q_tables/E{episode}",q_table)
+        # updating the stats consider last 'save_every' episodes
         aggr_episodes_rewards['ep'].append(episode)
-        avg_reward = sum(episodes_rewards[-100:])/len(episodes_rewards[-100:])
+        avg_reward = sum(episodes_rewards[-save_every:])/len(episodes_rewards[-save_every:])
         aggr_episodes_rewards['avg'].append(avg_reward)
-        aggr_episodes_rewards['min'].append(min(episodes_rewards[-100:]))
-        aggr_episodes_rewards['max'].append(max(episodes_rewards[-100:]))
+        aggr_episodes_rewards['min'].append(min(episodes_rewards[-save_every:]))
+        aggr_episodes_rewards['max'].append(max(episodes_rewards[-save_every:]))
+
+    # annealing the exploratory rate(epsilon)
+    if epsilon > Exploration_rate :
+        epsilon -= epsilon_decay_rate
 
     episodes_rewards.append(episode_reward)
 
-fig_handle = plt.figure(figsize=(12,7))
+plt.figure(figsize=(12,7))
 plt.subplot(211)
 plt.title(f"reward metrics for every{save_every} episodes")
 plt.plot(aggr_episodes_rewards['ep'],aggr_episodes_rewards['avg'],label='average reward')
@@ -180,18 +183,34 @@ plt.xlabel("Episodes")
 plt.ylabel("Net reward")
 plt.plot(np.arange(Total_episodes+1),np.array(episodes_rewards))
 plt.grid()
-
 plt.savefig(f'{new_folder_name}/metrics.png')
-# save matplotlib figure for later use
-with open(f'{new_folder_name}/metrics.pickle', 'wb') as f:
-    pickle.dump(fig_handle,f)
-    print(f"matplotlib figure saved a {new_folder_name}/metrics.pickle file")
-
 plt.show()
-
 print("<< Done >>")
 
-# # loading matplotlib plot
-# with open(f'{new_folder_name}/metrics.pickle', 'rb') as f:
-#     file_handle = pickle.load(f)
-# plt.show()
+
+def play_episode(qtable_filename,fps=60):
+    '''
+    Input : Relative path of file with '.npy' extension 
+    FPS to render the envirnoment,default is 60 FPS
+    '''
+
+    q_table = np.load(qtable_filename)
+    print(f"Size of the Q table{q_table.shape}")
+
+    path1 = Path()
+    env = Env(path1)
+    episode_reward = 0
+    # reset the envirnoment
+    dis_state = get_discrete(env.reset())
+    while not env.done :
+        
+        #choose best action from Q(s,a) values
+        action = np.argmax(q_table[dis_state])  
+
+        cords,reward,_ = env.step(actions[action])
+        episode_reward += reward
+        dis_state = get_discrete(cords)
+
+        env.render_env(FPS_lock=fps,render_stats=True)
+        env.close_quit()
+    print(f"Episode total reward : {episode_reward}")

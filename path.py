@@ -431,7 +431,7 @@ def path_editor():
     path = Path()
     width, height = 1300, 750 # specific the window size in px
     path.screen_size[0],path.screen_size[1] = (width,height)
-    path.load_from_json('small0')
+    # path.load_from_json('straight_zoom')
     FPS = 60
     screen = pygame.display.set_mode((path.screen_size[0],path.screen_size[1]))
     clock = pygame.time.Clock()
@@ -455,7 +455,7 @@ def path_editor():
                 elif event.key == pygame.K_s :
                     path_name = input('- Enter the name for the path : ').strip()
                     # can use overwrite=True as argument to overwrite the saved path.
-                    if path.save_to_json(screen,path_name,overwrite=True) : 
+                    if path.save_to_json(screen,path_name) : 
                         print(f"- Path saved as '{path_name}'")
                         saved = True
                 elif event.key == pygame.K_p :

@@ -4,10 +4,14 @@
     "x_samples": 100,
     "y_samples": 60,
     "XTE_samples": 3,
-    "learning_rate": 0.01,
+    "nn_learning_rate": 0.001,
     "discount": 0.9,
     "exploration_rate": 0.01,
     "epsilon_decay_till": 10000,
     "save_every": 2000,
-    "render_record_every": 2000
+    "render_record_every": 2000,
+    "batch_size" : 64,
+    "seed" : 333,
+    "memory_size" : 100000,
+    "target_network_update_rate" : 100
 }
