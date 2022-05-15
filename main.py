@@ -9,6 +9,11 @@ import matplotlib.pyplot as plt
 from time import time, gmtime, strftime
 import os, json, pickle, torch
 
+# <------ for headless execution(server) --------->
+# set SDL to use the dummy NULL video driver, 
+# so it doesn't need a windowing system.
+os.environ["SDL_VIDEODRIVER"] = "dummy"
+
 # opening the json file
 try :
     with open(os.path.join('assets','dqn_config.json'),'r') as config:

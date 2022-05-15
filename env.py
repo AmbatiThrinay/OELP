@@ -5,6 +5,11 @@ from path import Path
 from scipy import spatial
 import cv2, json, os
 
+# <------ for headless execution(server) --------->
+# set SDL to use the dummy NULL video driver, 
+# so it doesn't need a windowing system.
+os.environ["SDL_VIDEODRIVER"] = "dummy"
+
 pygame.init()
 pygame.display.set_caption("Car control")
 FONT = pygame.font.SysFont(os.path.join('assets','ComicNeue-Regular.ttf'),20)
