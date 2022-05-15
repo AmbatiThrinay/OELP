@@ -159,7 +159,7 @@ class DQN():
     
     def save(self, filepath):
         self.Q_network_local.save(filepath+'_local.pth')
-        self.Q_network_target.save(filepath'_target.pth')
+        self.Q_network_target.save(filepath+'_target.pth')
 
     def load(self, filepath):
         self.Q_network_local.load(filepath+'_local.pth')

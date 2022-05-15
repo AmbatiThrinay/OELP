@@ -83,7 +83,7 @@ print(f"Size of the Q table{q_table.shape}")
 unique_string = strftime("_%d-%b-%Y-%H-%M-%S", gmtime())
 new_folder_name = path_name+unique_string
 os.mkdir(new_folder_name) # name of the dir where the files are stored
-os.mkdir(os.path.join(new_folder_name+'Q_tables')) # for storing the Q_tables
+os.mkdir(os.path.join(new_folder_name,'Q_tables')) # for storing the Q_tables
 # writing the Q-learning config used
 with open(os.path.join(new_folder_name,'q_learning_config_used.json'),'w') as config:
     json.dump(q_learning_config,config)
