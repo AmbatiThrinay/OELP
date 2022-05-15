@@ -151,7 +151,7 @@ def game():
             car.update("steer_none",dt)
 
         # text
-        font = pygame.font.SysFont('assets/ComicNeue-Regular.ttf',18)
+        font = pygame.font.SysFont(os.path.join('assets','ComicNeue-Regular.ttf'),18)
         text_surface1 = font.render(f"(x,y) : ({car.position.x:.3f},{car.position.y:.3f})",True,(0,255,0))
         text_surface2 = font.render(f"steering : {car.steering:.3f}",True,(0,255,0))
         text_surface3 = font.render(f"velocity : {car.velocity:.3f}",True,(0,255,0))

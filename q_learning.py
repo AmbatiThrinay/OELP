@@ -11,7 +11,7 @@ import os, json
 
 # opening the json file
 try :
-    with open('assets\q_learning_config.json','r') as config:
+    with open(os.path.join('assets','q_learning_config.json'),'r') as config:
         q_learning_config = json.load(config)
 except FileNotFoundError :
     print("Q-learning config Json file is missing from assets folder.")
@@ -78,9 +78,9 @@ print(f"Size of the Q table{q_table.shape}")
 unique_string = strftime("_%d-%b-%Y-%H-%M-%S", gmtime())
 new_folder_name = path_name+unique_string
 os.mkdir(new_folder_name) # name of the dir where the files are stored
-os.mkdir(new_folder_name+'/Q_tables') # for storing the Q_tables
+os.mkdir(os.path.join(new_folder_name+'Q_tables')) # for storing the Q_tables
 # writing the Q-learning config used
-with open(f'{new_folder_name}\q_learning_config_used.json','w') as config:
+with open(os.path.join(new_folder_name,'q_learning_config_used.json'),'w') as config:
     json.dump(q_learning_config,config)
 
 
@@ -155,7 +155,7 @@ for episode in tqdm(range(Total_episodes+1)):
     
     # saving the Q table
     if save :
-        np.save(f"{new_folder_name}/Q_tables/E{episode}",q_table)
+        np.save(os.path.join(new_folder_name,'Q_tables',f"E{episode}"),q_table)
         # updating the stats consider last 'save_every' episodes
         aggr_episodes_rewards['ep'].append(episode)
         avg_reward = sum(episodes_rewards[-save_every:])/len(episodes_rewards[-save_every:])
@@ -183,7 +183,7 @@ plt.xlabel("Episodes")
 plt.ylabel("Net reward")
 plt.plot(np.arange(Total_episodes+1),np.array(episodes_rewards))
 plt.grid()
-plt.savefig(f'{new_folder_name}/metrics.png')
+plt.savefig(os.path.join(new_folder_name,'metrics.png'))
 plt.show()
 print("<< Done >>")
 

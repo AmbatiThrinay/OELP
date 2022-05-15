@@ -2,8 +2,7 @@ import pygame
 from pygame.math import Vector2 as vec2d
 import pygame.gfxdraw as gfxdraw
 import numpy as np
-import json
-import math
+import json, os
 
 # supressing the pygame hello message
 import os
@@ -30,7 +29,7 @@ class Path:
         self.initial_angle = 0.0
         self.initial_velocity = 0.0
         self.image_path = None
-        self.font = pygame.font.SysFont('assets/'+Path.font, Path.text_font_size)
+        self.font = pygame.font.SysFont(os.path.join('assets',Path.font), Path.text_font_size)
         self.spline_resolution = 5 # distance between interpolated points in m
         self.ppu = 2 # pixels per unit (meters)
 
@@ -116,10 +115,10 @@ class Path:
         
         # opening the json file
         try :
-            with open('assets\paths.json','r') as paths:
+            with open(os.path.join('assets','paths.json'),'r') as paths:
                 paths_json = json.load(paths)
         except FileNotFoundError :
-            print("- Json file is missing from assets folder")
+            print("-Paths json file is missing from assets folder")
             print("- Using the default path")
             return False
         
@@ -174,10 +173,10 @@ class Path:
         paths_json = 0
         # opening the json file
         try :
-            with open('assets\paths.json','r') as paths:
+            with open(os.path.join('assets','paths.json'),'r') as paths:
                 paths_json = json.load(paths)
         except FileNotFoundError :
-            print("- Json file is missing from assets folder.")
+            print("-Paths json file is missing from assets folder.")
             return False
         
         # checking if path name already exist in json file
@@ -188,7 +187,7 @@ class Path:
             print(f"- '{path_name}' named path already exist in the json, overwrite it.")
 
         # saving the path data in json file
-        with open('assets\paths.json','w') as paths :
+        with open(os.path.join('assets','paths.json'),'w') as paths :
             paths_json[f'{path_name}'] = path_data
             json.dump(paths_json, paths)
         return True
@@ -201,11 +200,11 @@ class Path:
         '''
         # opening the json file
         try :
-            with open('assets\paths.json','r') as paths:
+            with open(os.path.join('assets','paths.json'),'r') as paths:
                 paths_json = json.load(paths)
         except FileNotFoundError :
-            print("- Json file is missing from assets folder.")
-            return []
+            print("-Paths json file is missing from assets folder.")
+            return
         return [*paths_json.keys()]
         
 
@@ -531,7 +530,7 @@ def path_editor():
         if show_control_points : path._render_control_points(screen)
 
         # rendering mapsize,path width, spline resolution,fps and saved status to the screen
-        font = pygame.font.SysFont('assets/'+Path.font, text_size)
+        font = pygame.font.SysFont(os.path.join('assets',Path.font), text_size)
         text_surface = font.render(f"Map size : {path.screen_size[0]/path.ppu :.2f} m x {path.screen_size[1]/path.ppu :.2f} m",True,text_color)
         screen.blit(text_surface,(10,10))
         text_surface = font.render(f"Path width : {path.path_width:.3f} m",True,text_color)

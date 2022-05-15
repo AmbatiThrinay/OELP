@@ -82,8 +82,8 @@ class DQN():
         # train on GPU if available
         self.device=torch.device(('cuda:0' if torch.cuda.is_available() else 'cpu'))
 
-        self.Q_network_local = DeepQNetwork(n_inputs, 256, 256, n_actions, seed).to(self.device)
-        self.Q_network_target = DeepQNetwork(n_inputs, 256, 256, n_actions, seed).to(self.device)
+        self.Q_network_local = DeepQNetwork(n_inputs, 128, 128, n_actions, seed).to(self.device)
+        self.Q_network_target = DeepQNetwork(n_inputs, 128, 128, n_actions, seed).to(self.device)
 
         self.optimizer = torch.optim.Adam(self.Q_network_local.parameters(), lr=lr) # Adam optimizer
         self.loss = nn.HuberLoss() # Huber loss
@@ -158,13 +158,9 @@ class DQN():
         else: self.epsilon = self.eps_min
     
     def save(self, filepath):
-        filepath = filepath + '_local.pth'
-        self.Q_network_local.save(filepath)
-        filepath = filepath + '_target.pth'
-        self.Q_network_target.save(filepath)
+        self.Q_network_local.save(filepath+'_local.pth')
+        self.Q_network_target.save(filepath'_target.pth')
 
     def load(self, filepath):
-        filepath = filepath + '_local.pth'
-        self.Q_network_local.load(filepath)
-        filepath = filepath + '_target.pth'
-        self.Q_network_target.load(filepath)
+        self.Q_network_local.load(filepath+'_local.pth')
+        self.Q_network_target.load(filepath+'_target.pth')

@@ -7,11 +7,11 @@ import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from time import time, gmtime, strftime
-import os, json, pickle
+import os, json, pickle, torch
 
 # opening the json file
 try :
-    with open('assets\dqn_config.json','r') as config:
+    with open(os.path.join('assets','dqn_config.json'),'r') as config:
         dqn_config = json.load(config)
 except FileNotFoundError :
     print("DQN config Json file is missing from assets folder.")
@@ -60,8 +60,8 @@ actions = {
 # DQN agent
 agent = DQN(
     3, len(actions), nn_learning_rate, Discount, batch_size, seed,
-    epsilon=1,target_update_rate=target_update_rate, eps_end=Exploration_rate,
-    eps_dec=epsilon_decay_rate)
+    epsilon = 1,target_update_rate=target_update_rate, eps_end=Exploration_rate,
+    eps_dec = epsilon_decay_rate)
 
 # <-- Environment Discretization -->
 x_max,y_max,xte_max = path1.screen_size[0]/env.ppu,path1.screen_size[1]/env.ppu,path1.path_width/2
@@ -84,9 +84,9 @@ def get_discrete(cords):
 unique_string = strftime("_%d-%b-%Y-%H-%M-%S", gmtime())
 new_folder_name = path_name+unique_string
 os.mkdir(new_folder_name) # name of the dir where the files are stored
-os.mkdir(new_folder_name+'/DQN_checkpoints') # for storing the Q_tables
+os.mkdir(os.path.join(new_folder_name,'DQN_checkpoints')) # for storing the Q_tables
 # writing the Q-learning config used
-with open(f'{new_folder_name}\dqn_config_used.json','w') as config:
+with open(os.path.join(new_folder_name,'dqn_config_used.json'),'w') as config:
     json.dump(dqn_config,config)
 
 
@@ -142,19 +142,21 @@ for episode in tqdm(range(Total_episodes+1)):
         elif abs(env.car.angle) > 360*2 :
             env.done = True
             print(f"Car is moving in circles, Episode {episode} was stopped.")
-            print(agent.Q_network_local.forward(dis_state))
-            
         
         # stopping the environment if episode time exceeds 2.5 mins
         elif (time() - start_time)/60 > 2.5 :
             env.done = True
             print(f"Episode time exceeded, Episode {episode} was stopped.")
 
+        # del this - to show env if pressed s
+        # if not render and (time()-start_time)%5 :
+        #     env.render_env(FPS_lock=None,render_stats=True)
+
         env.close_quit()
     
-    # saving the Q table
+    # saving the DQN networks table
     if save :
-        agent.save(f"{new_folder_name}/DQN_checkpoints/E{episode}")
+        agent.save(os.path.join(new_folder_name,"DQN_checkpoints",f"E{episode}"))
 
     # updating the stats considering last 100 episodes
     if episode%100 :
@@ -165,6 +167,12 @@ for episode in tqdm(range(Total_episodes+1)):
         aggr_episodes_rewards['max'].append(max(episodes_rewards[-100:]))
 
     episodes_rewards.append(episode_reward)
+
+    # del this
+    if episode_reward > 5:
+        print("Got positive reward of 5")
+        agent.save(os.path.join(new_folder_name,"DQN_checkpoints",f"E{episode}"))
+        break
 
 fig_handle = plt.figure(figsize=(12,7))
 plt.subplot(211)
@@ -178,12 +186,12 @@ plt.subplot(212)
 plt.title("Net Reward for each Episode")
 plt.xlabel("Episodes")
 plt.ylabel("Net reward")
-plt.plot(np.arange(Total_episodes+1),np.array(episodes_rewards))
+plt.plot(np.arange(len(episodes_rewards)),np.array(episodes_rewards))
 plt.grid()
 
-plt.savefig(f'{new_folder_name}/metrics.png')
+plt.savefig(os.path.join(new_folder_name,'metrics.png'))
 # save matplotlib figure for later use
-with open(f'{new_folder_name}/metrics.pickle', 'wb') as f:
+with open(os.path.join(new_folder_name,'metrics.pickle'), 'wb') as f:
     pickle.dump(fig_handle,f)
     print(f"matplotlib figure saved a {new_folder_name}/metrics.pickle file")
 

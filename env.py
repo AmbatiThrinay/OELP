@@ -3,17 +3,17 @@ import pygame
 from car_model import Car
 from path import Path
 from scipy import spatial
-import cv2, json
+import cv2, json, os
 
 pygame.init()
 pygame.display.set_caption("Car control")
-FONT = pygame.font.SysFont('assets/ComicNeue-Regular.ttf',20)
+FONT = pygame.font.SysFont(os.path.join('assets','ComicNeue-Regular.ttf'),20)
 
 
 class Env(Path):
     # opening the json file
     try :
-        with open('assets\q_learning_config.json','r') as config:
+        with open(os.path.join('assets','q_learning_config.json'),'r') as config:
             q_learning_config = json.load(config)
     except FileNotFoundError :
         print("Q-learning config Json file is missing from assets folder")
@@ -37,7 +37,7 @@ class Env(Path):
 
         self.xte = 0.0
         self.reward = 0.0
-        self._car_image = pygame.image.load('assets/green-car.png')
+        self._car_image = pygame.image.load(os.path.join('assets','green-car.png'))
         # resizing the car image
         new_car_size = (round(self._car_image.get_width() * 0.7),round(self._car_image.get_height() * 0.7))
         self._car_image = pygame.transform.scale(self._car_image,new_car_size)
