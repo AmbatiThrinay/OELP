@@ -16,3 +16,60 @@ python3 -m venv env
 source env/bin/activate
 pip install -r requirements.txt
 ```
+## Path Editor
+
+<p align="center">
+<img src="images\path-editor-good.gif" alt="Path Editor demo png" title="path editor demo">
+</p>
+<p align="center">Path Editor Demo</p>
+
+## Q-learning
+
+<p align="center">
+<img src="images\q-learning-straight.gif" alt="Q-learning agent on straight path gif" title="Q-learning agent">
+</p>
+<p align="center">Q-learning agent on straight track</p>
+
+<p align="center">
+<img src="images\q-learning-curved.gif" alt="Q-learning agent on straight path gif" title="Q-learning agent">
+</p>
+<p align="center">Q-learning agent on curved track</p>
+
+## Deep Q-learning
+
+<p align="center">
+<img src="images\dqn-straight.gif" alt="DQN agent on straight path gif" title="DQN agent">
+</p>
+<p align="center">Deep Q-learning agent on straight track</p>
+
+<p align="center">
+<img src="images\dqn-curved.gif" alt="DQN agent on straight path gif" title="DQN agent">
+</p>
+<p align="center">Deep Q-learning agent on curved track</p>
+
+## Results
+
+<table>
+    <tr>
+        <p align="center">
+        <img src="images/q_learning_straight.png" alt="Q-learning agent on straight track png" title="Q-learning agent">
+        </p>
+        <p align="center">
+        Q-learning agent on straight track
+        </p>
+    </tr> 
+    <tr>
+        <p align="center">
+        <img src="images/dqn_straight.png" alt="DQN-learning agent on straight track png" title="DQN agent">
+        </p>
+        <p align="center">Deep Q-learning agent on straight track</p>
+    </tr>
+    <tr>
+        <p align="center">
+        <img src="images/dqn_curved.png" alt="DQN-learning agent on straight track png" title="DQN agent">
+        </p>
+        <p align="center">Deep Q-learning agent on curved track</p">
+    </tr>
+</table>
+
+[Final Report](report.pdf)
